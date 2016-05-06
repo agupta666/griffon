@@ -10,20 +10,22 @@ import (
 func Handler(w dns.ResponseWriter, r *dns.Msg) {
 	log.Println(r)
 
+	e := lookup(r.Question[0].Name)
+
 	m := new(dns.Msg)
-    m.SetReply(r)
+	m.SetReply(r)
 	switch r.Question[0].Qtype {
 	case dns.TypeA:
-		s := fmt.Sprintf("%s  0 IN    A    %s", r.Question[0].Name, "127.0.0.1")
-		rr,_ := dns.NewRR(s)
+		s := fmt.Sprintf("%s  0 IN    A    %s", e.Name, e.IP)
+		rr, _ := dns.NewRR(s)
 		m.Answer = append(m.Answer, rr)
 	case dns.TypeSRV:
-		s  := fmt.Sprintf("%s    0    IN    SRV    1 1 %d %s", r.Question[0].Name, 3360, r.Question[0].Name)
-		sa := fmt.Sprintf("%s 0 IN    A    %s", r.Question[0].Name, "127.0.0.1")
-		rr,_ := dns.NewRR(s)
-		rr1,_ := dns.NewRR(sa)
+		s := fmt.Sprintf("%s    0    IN    SRV    1 1 %d %s", e.Name, e.Port, e.Name)
+		sa := fmt.Sprintf("%s 0 IN    A    %s", e.Name, e.IP)
+		rr, _ := dns.NewRR(s)
+		rr1, _ := dns.NewRR(sa)
 		m.Answer = append(m.Answer, rr)
-		m.Extra  = append(m.Extra, rr1)
+		m.Extra = append(m.Extra, rr1)
 	}
 	w.WriteMsg(m)
 }
@@ -45,6 +47,7 @@ var (
 
 func main() {
 	flag.Parse()
+	go StartRESTServer("0.0.0.0", 3000)
 
 	dns.HandleFunc(*root, Handler)
 	go serve("tcp", *host, *port)

@@ -8,13 +8,13 @@ add `nameserver 127.0.0.1` in /etc/resolv.conf
 $ griffon -p 53
 ```
 
-Add entries 
+Add entries
 
 ```
-$ curl -H "Content-Type: application/json" -X POST -d '{"name":"mysql","ip":"127.0.0.1", "port": 3306 }' http://localhost:3000/api/v1/entries
+$ curl -H "Content-Type: application/json" -X POST -d '{"name":"mysql.service.consul.","ip":"127.0.0.1", "port": 3306 }' http://localhost:3000/api/v1/entries
 ```
 
-now use dig 
+now use dig
 
 ```
 $ dig mysql.service.consul
