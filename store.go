@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"sync"
 )
 
@@ -29,6 +30,13 @@ func allEntries() []*Entry {
 	return exs
 }
 
-func lookup(name string) *Entry {
-	return entries[name]
+func lookup(name string) (*Entry, error) {
+
+	entry, ok := entries[name]
+
+	if ok {
+		return entry, nil
+	} else {
+		return nil, errors.New("lookup failed")
+	}
 }

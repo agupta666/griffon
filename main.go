@@ -10,7 +10,12 @@ import (
 func Handler(w dns.ResponseWriter, r *dns.Msg) {
 	log.Println(r)
 
-	e := lookup(r.Question[0].Name)
+	e, err := lookup(r.Question[0].Name)
+
+	if err != nil {
+		log.Println("ERROR:", err)
+		return
+	}
 
 	m := new(dns.Msg)
 	m.SetReply(r)
