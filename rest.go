@@ -6,6 +6,7 @@ import (
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -22,8 +23,13 @@ func addEntry(w http.ResponseWriter, r *http.Request) {
 	var e Entry
 	b, _ := ioutil.ReadAll(r.Body)
 	json.Unmarshal(b, &e)
+	log.Println("entry", e)
 
-	saveEntry(&e)
+	err := saveEntry(&e)
+
+	if err != nil {
+		log.Println("ERROR: saving entry.", err)
+	}
 
 	json.NewEncoder(w).Encode(e)
 }

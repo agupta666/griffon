@@ -1,9 +1,13 @@
 package main
 
 import (
-	"errors"
-	"sync"
+	"encoding/json"
+	"github.com/boltdb/bolt"
+	"os"
+	"fmt"
 )
+
+const BUCKET = "entries"
 
 type Entry struct {
 	Name string `json:"name"`
@@ -11,32 +15,79 @@ type Entry struct {
 	Port int    `json:"port"`
 }
 
+func (e Entry) Array() []string {
+	return []string{ e.Name, e.IP, fmt.Sprintf("%d", e.Port) }
+}
+
 var (
-	entries = make(map[string]*Entry)
-	guard   sync.Mutex
+	db *bolt.DB
 )
 
-func saveEntry(e *Entry) {
-	guard.Lock()
-	entries[e.Name] = e
-	guard.Unlock()
+func InitDB(path string, mode os.FileMode) (*bolt.DB, error) {
+	var err error
+	db, err = bolt.Open(path, mode, nil)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+func saveEntry(e *Entry) error {
+	data, err := json.Marshal(e)
+
+	if err != nil {
+		return err
+	}
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucketIfNotExists([]byte(BUCKET))
+		if err != nil {
+			return err
+		}
+		err = b.Put([]byte(e.Name), data)
+		return err
+	})
+
+	return err
 }
 
 func allEntries() []*Entry {
-	exs := make([]*Entry, 0)
-	for _, value := range entries {
-		exs = append(exs, value)
-	}
-	return exs
+	entries := make([]*Entry, 0)
+
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(BUCKET))
+
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var entry Entry
+			err := json.Unmarshal(v, &entry)
+			if err != nil {
+				return err
+			}
+			entries = append(entries, &entry)
+		}
+
+		return nil
+	})
+
+	return entries
 }
 
 func lookup(name string) (*Entry, error) {
+	var entry Entry
+	e := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(BUCKET))
+		v := b.Get([]byte(name))
 
-	entry, ok := entries[name]
+		err := json.Unmarshal(v, &entry)
 
-	if ok {
-		return entry, nil
-	} else {
-		return nil, errors.New("lookup failed")
-	}
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return &entry, e
 }

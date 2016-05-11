@@ -1,60 +1,78 @@
 package main
 
 import (
-	"flag"
-	"fmt"
+	"github.com/codegangsta/cli"
 	"github.com/miekg/dns"
 	"log"
+	"os"
 )
 
-func Handler(w dns.ResponseWriter, r *dns.Msg) {
-	log.Println(r)
-
-	e, err := lookup(r.Question[0].Name)
-
-	if err != nil {
-		log.Println("ERROR:", err)
-		return
-	}
-
-	m := new(dns.Msg)
-	m.SetReply(r)
-	switch r.Question[0].Qtype {
-	case dns.TypeA:
-		s := fmt.Sprintf("%s  0 IN    A    %s", e.Name, e.IP)
-		rr, _ := dns.NewRR(s)
-		m.Answer = append(m.Answer, rr)
-	case dns.TypeSRV:
-		s := fmt.Sprintf("%s    0    IN    SRV    1 1 %d %s", e.Name, e.Port, e.Name)
-		sa := fmt.Sprintf("%s 0 IN    A    %s", e.Name, e.IP)
-		rr, _ := dns.NewRR(s)
-		rr1, _ := dns.NewRR(sa)
-		m.Answer = append(m.Answer, rr)
-		m.Extra = append(m.Extra, rr1)
-	}
-	w.WriteMsg(m)
-}
-
-func serve(net string, host string, port int) {
-	log.Printf("starting %s server on %s:%d", net, host, port)
-	server := &dns.Server{Addr: fmt.Sprintf("%s:%d", host, port), Net: net, TsigSecret: nil}
-	err := server.ListenAndServe()
-	if err != nil {
-		fmt.Printf("Failed to setup the "+net+" server: %s\n", err.Error())
-	}
-}
-
+/*
 var (
 	root = flag.String("r", "service.consul.", "root domain.")
 	host = flag.String("b", "0.0.0.0", "bind address.")
 	port = flag.Int("p", 8053, "port to listen.")
 )
+*/
+func serve(c *cli.Context) {
+
+	domain := c.String("d")
+	dnsHost := c.String("b")
+	dnsPort := c.Int("p")
+	restHost := c.String("s")
+	restPort := c.Int("q")
+
+	db, err := InitDB(".griffon.db", 0600)
+
+	if err != nil {
+		log.Println("ERROR: opening database", err)
+		return
+	}
+	defer db.Close()
+
+	go StartRESTServer(restHost, restPort)
+
+	dns.HandleFunc(domain, Handler)
+	go serveDNS("tcp", dnsHost, dnsPort)
+	serveDNS("udp", dnsHost, dnsPort)
+}
 
 func main() {
-	flag.Parse()
-	go StartRESTServer("0.0.0.0", 3000)
+	app := cli.NewApp()
+	app.Name = "griffon"
+	app.Usage = "dns server"
 
-	dns.HandleFunc(*root, Handler)
-	go serve("tcp", *host, *port)
-	serve("udp", *host, *port)
+	app.Commands = []cli.Command{
+		{
+			Name:  "serve",
+			Usage: "start dns server",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "d", Value: "service.consul", Usage: "domain."},
+				cli.StringFlag{Name: "b", Value: "0.0.0.0", Usage: "bind address for dns server."},
+				cli.IntFlag{Name: "p", Value: 8053, Usage: "dns server port."},
+				cli.StringFlag{Name: "s", Value: "0.0.0.0", Usage: "bind address for REST server."},
+				cli.IntFlag{Name: "q", Value: 3000, Usage: "REST server port."},
+			},
+			Action: serve,
+		},
+		{
+			Name:   "import",
+			Usage:  "import entries from csv / json",
+			Action: importData,
+		},
+		{
+			Name:  "export",
+			Usage: "export data to csv / json",
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "f", Value: "json", Usage: "export entries to given format. [csv|json]"},
+				cli.StringFlag{Name: "n", Value: "data", Usage: "name of the output file."},
+				cli.StringFlag{Name: "s", Value: "0.0.0.0", Usage: "address of the REST server."},
+				cli.IntFlag{Name: "p", Value: 3000, Usage: "REST server port."},
+			},
+			Action: exportData,
+		},
+	}
+
+	app.Run(os.Args)
+
 }
