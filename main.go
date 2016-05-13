@@ -37,6 +37,18 @@ func serve(c *cli.Context) {
 	serveDNS("udp", dnsHost, dnsPort)
 }
 
+
+func listData(c *cli.Context) {
+
+}
+
+
+func addData(c *cli.Context) {
+
+}
+
+
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "griffon"
@@ -57,12 +69,22 @@ func main() {
 		},
 		{
 			Name:   "import",
-			Usage:  "import entries from csv / json",
+			Usage:  "import entries from csv / json.",
 			Action: importData,
 		},
 		{
+			Name:   "list",
+			Usage:  "print all entries.",
+			Action: listData,
+		},
+		{
+			Name:   "add",
+			Usage:  "add entry.",
+			Action: addData,
+		},
+		{
 			Name:  "export",
-			Usage: "export data to csv / json",
+			Usage: "export data to csv / json.",
 			Flags: []cli.Flag{
 				cli.StringFlag{Name: "f", Value: "json", Usage: "export entries to given format. [csv|json]"},
 				cli.StringFlag{Name: "n", Value: "data", Usage: "name of the output file."},
