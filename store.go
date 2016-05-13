@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/boltdb/bolt"
 	"os"
-	"fmt"
 )
 
 const BUCKET = "entries"
@@ -16,7 +16,7 @@ type Entry struct {
 }
 
 func (e Entry) Array() []string {
-	return []string{ e.Name, e.IP, fmt.Sprintf("%d", e.Port) }
+	return []string{e.Name, e.IP, fmt.Sprintf("%d", e.Port)}
 }
 
 var (
