@@ -19,6 +19,10 @@ func (e Entry) Array() []string {
 	return []string{e.Name, e.IP, fmt.Sprintf("%d", e.Port)}
 }
 
+func (e Entry) String() string {
+	return fmt.Sprintf("%s - %s:%d", e.Name, e.IP, e.Port)
+}
+
 var (
 	db *bolt.DB
 )

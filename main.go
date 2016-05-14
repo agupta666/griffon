@@ -37,18 +37,6 @@ func serve(c *cli.Context) {
 	serveDNS("udp", dnsHost, dnsPort)
 }
 
-
-func listData(c *cli.Context) {
-
-}
-
-
-func addData(c *cli.Context) {
-
-}
-
-
-
 func main() {
 	app := cli.NewApp()
 	app.Name = "griffon"
@@ -76,6 +64,10 @@ func main() {
 			Name:   "list",
 			Usage:  "print all entries.",
 			Action: listData,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "s", Value: "0.0.0.0", Usage: "address of the REST server."},
+				cli.IntFlag{Name: "p", Value: 3000, Usage: "REST server port."},
+			},
 		},
 		{
 			Name:   "add",

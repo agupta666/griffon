@@ -1,14 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
-	"net/http"
-	"bytes"
 )
 
 func importJSON(fname string) {
