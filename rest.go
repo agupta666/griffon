@@ -10,14 +10,14 @@ import (
 	"net/http"
 )
 
-func listEntries(w http.ResponseWriter, r *http.Request) {
+func listEntriesHandler(w http.ResponseWriter, r *http.Request) {
 	entries := allEntries()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(entries)
 }
 
-func addEntry(w http.ResponseWriter, r *http.Request) {
+func addEntryHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var e Entry
@@ -37,8 +37,8 @@ func addEntry(w http.ResponseWriter, r *http.Request) {
 func StartRESTServer(host string, port int) {
 	router := mux.NewRouter()
 	apiV1 := router.PathPrefix("/api/v1").Subrouter()
-	apiV1.HandleFunc("/entries", listEntries).Methods("GET")
-	apiV1.HandleFunc("/entries", addEntry).Methods("POST")
+	apiV1.HandleFunc("/entries", listEntriesHandler).Methods("GET")
+	apiV1.HandleFunc("/entries", addEntryHandler).Methods("POST")
 	n := negroni.Classic()
 	n.UseHandler(router)
 	n.Run(fmt.Sprintf("%s:%d", host, port))

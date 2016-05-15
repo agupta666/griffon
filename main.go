@@ -73,6 +73,13 @@ func main() {
 			Name:   "add",
 			Usage:  "add entry.",
 			Action: addData,
+			Flags: []cli.Flag{
+				cli.StringFlag{Name: "s", Value: "0.0.0.0", Usage: "address of the REST server."},
+				cli.IntFlag{Name: "p", Value: 3000, Usage: "REST server port."},
+				cli.StringFlag{Name: "name", Usage: "domain name."},
+				cli.StringFlag{Name: "ip", Usage: "ip address."},
+				cli.IntFlag{Name: "port", Usage: "ip address."},
+			},
 		},
 		{
 			Name:  "export",
