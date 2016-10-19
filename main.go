@@ -1,26 +1,36 @@
 package main
 
 import (
-	"github.com/codegangsta/cli"
-	"github.com/miekg/dns"
+	"flag"
 	"log"
 	"os"
+
+	"github.com/miekg/dns"
 )
 
-/*
 var (
-	root = flag.String("r", "service.consul.", "root domain.")
-	host = flag.String("b", "0.0.0.0", "bind address.")
-	port = flag.Int("p", 8053, "port to listen.")
+	domain      = flag.String("r", "service.consul.", "root domain.")
+	dnsHost     = flag.String("b", "0.0.0.0", "bind address.")
+	dnsPort     = flag.Int("p", 8053, "port to listen.")
+	restHost    = flag.String("s", "0.0.0.0", "bind address for REST interface.")
+	restPort    = flag.Int("q", 8080, "port to listen for REST interface.")
+	interactive = flag.Bool("c", false, "start in interactive mode.")
 )
-*/
-func serve(c *cli.Context) {
 
-	domain := c.String("d")
-	dnsHost := c.String("b")
-	dnsPort := c.Int("p")
-	restHost := c.String("s")
-	restPort := c.Int("q")
+func main() {
+
+	flag.Parse()
+
+	if *interactive {
+		f, err := os.OpenFile("griffon.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Println("ERROR: opening log file", err)
+			return
+		}
+		defer f.Close()
+
+		log.SetOutput(f)
+	}
 
 	db, err := InitDB(".griffon.db", 0600)
 
@@ -30,70 +40,16 @@ func serve(c *cli.Context) {
 	}
 	defer db.Close()
 
-	go StartRESTServer(restHost, restPort)
+	go StartRESTServer(*restHost, *restPort)
 
-	dns.HandleFunc(domain, Handler)
-	go serveDNS("tcp", dnsHost, dnsPort)
-	serveDNS("udp", dnsHost, dnsPort)
-}
+	dns.HandleFunc(*domain, Handler)
+	go serveDNS("tcp", *dnsHost, *dnsPort)
 
-func main() {
-	app := cli.NewApp()
-	app.Name = "griffon"
-	app.Usage = "dns server"
-
-	app.Commands = []cli.Command{
-		{
-			Name:  "serve",
-			Usage: "start dns server",
-			Flags: []cli.Flag{
-				cli.StringFlag{Name: "d", Value: "service.consul", Usage: "domain."},
-				cli.StringFlag{Name: "b", Value: "0.0.0.0", Usage: "bind address for dns server."},
-				cli.IntFlag{Name: "p", Value: 8053, Usage: "dns server port."},
-				cli.StringFlag{Name: "s", Value: "0.0.0.0", Usage: "bind address for REST server."},
-				cli.IntFlag{Name: "q", Value: 3000, Usage: "REST server port."},
-			},
-			Action: serve,
-		},
-		{
-			Name:   "import",
-			Usage:  "import entries from csv / json.",
-			Action: importData,
-		},
-		{
-			Name:   "list",
-			Usage:  "print all entries.",
-			Action: listData,
-			Flags: []cli.Flag{
-				cli.StringFlag{Name: "s", Value: "0.0.0.0", Usage: "address of the REST server."},
-				cli.IntFlag{Name: "p", Value: 3000, Usage: "REST server port."},
-			},
-		},
-		{
-			Name:   "add",
-			Usage:  "add entry.",
-			Action: addData,
-			Flags: []cli.Flag{
-				cli.StringFlag{Name: "s", Value: "0.0.0.0", Usage: "address of the REST server."},
-				cli.IntFlag{Name: "p", Value: 3000, Usage: "REST server port."},
-				cli.StringFlag{Name: "name", Usage: "domain name."},
-				cli.StringFlag{Name: "ip", Usage: "ip address."},
-				cli.IntFlag{Name: "port", Usage: "ip address."},
-			},
-		},
-		{
-			Name:  "export",
-			Usage: "export data to csv / json.",
-			Flags: []cli.Flag{
-				cli.StringFlag{Name: "f", Value: "json", Usage: "export entries to given format. [csv|json]"},
-				cli.StringFlag{Name: "n", Value: "data", Usage: "name of the output file."},
-				cli.StringFlag{Name: "s", Value: "0.0.0.0", Usage: "address of the REST server."},
-				cli.IntFlag{Name: "p", Value: 3000, Usage: "REST server port."},
-			},
-			Action: exportData,
-		},
+	if *interactive {
+		go serveDNS("udp", *dnsHost, *dnsPort)
+		startShell()
+	} else {
+		serveDNS("udp", *dnsHost, *dnsPort)
 	}
-
-	app.Run(os.Args)
 
 }

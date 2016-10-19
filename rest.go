@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/codegangsta/negroni"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func listEntriesHandler(w http.ResponseWriter, r *http.Request) {
@@ -35,11 +35,15 @@ func addEntryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartRESTServer(host string, port int) {
+	addr := fmt.Sprintf("%s:%d", host, port)
+
 	router := mux.NewRouter()
 	apiV1 := router.PathPrefix("/api/v1").Subrouter()
 	apiV1.HandleFunc("/entries", listEntriesHandler).Methods("GET")
 	apiV1.HandleFunc("/entries", addEntryHandler).Methods("POST")
-	n := negroni.Classic()
-	n.UseHandler(router)
-	n.Run(fmt.Sprintf("%s:%d", host, port))
+	err := http.ListenAndServe(addr, router)
+
+	if err != nil {
+		log.Println("ERROR: starting REST interface", err)
+	}
 }

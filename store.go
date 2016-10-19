@@ -3,8 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/boltdb/bolt"
 	"os"
+
+	"github.com/boltdb/bolt"
 )
 
 const BUCKET = "entries"
@@ -76,6 +77,13 @@ func allEntries() []*Entry {
 	})
 
 	return entries
+}
+
+func deleteEntry(name string) error {
+	err := db.Update(func(tx *bolt.Tx) error {
+		return tx.Bucket([]byte(BUCKET)).Delete([]byte(name))
+	})
+	return err
 }
 
 func lookup(name string) (*Entry, error) {

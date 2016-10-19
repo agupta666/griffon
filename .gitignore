@@ -1,2 +1,4 @@
 griffon
 *.db
+*.log
+*.hist
