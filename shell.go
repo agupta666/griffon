@@ -99,10 +99,18 @@ func process(line string) {
 	hx(xs[1:])
 }
 
+var completer = readline.NewPrefixCompleter(
+	readline.PcItem("add"),
+	readline.PcItem("list"),
+	readline.PcItem("delete"),
+	readline.PcItem("exit"),
+)
+
 func startShell() {
 	rl, err := readline.NewEx(&readline.Config{
-		Prompt:      "griffon> ",
-		HistoryFile: ".griffon.hist",
+		Prompt:       "griffon> ",
+		HistoryFile:  ".griffon.hist",
+		AutoComplete: completer,
 	})
 
 	if err != nil {
