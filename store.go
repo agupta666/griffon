@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -62,6 +63,10 @@ func allEntries() []*Entry {
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BUCKET))
 
+		if b == nil {
+			return errors.New("bucket not found")
+		}
+
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -90,6 +95,11 @@ func lookup(name string) (*Entry, error) {
 	var entry Entry
 	e := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BUCKET))
+
+		if b == nil {
+			return errors.New("bucket not found")
+		}
+
 		v := b.Get([]byte(name))
 
 		err := json.Unmarshal(v, &entry)
