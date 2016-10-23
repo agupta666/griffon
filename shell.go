@@ -99,10 +99,22 @@ func process(line string) {
 	hx(xs[1:])
 }
 
+func entries() func(string) []string {
+	return func(line string) []string {
+		exs := allEntries()
+		var result []string
+		for _, e := range exs {
+			result = append(result, e.Name)
+		}
+
+		return result
+	}
+}
+
 var completer = readline.NewPrefixCompleter(
 	readline.PcItem("add"),
 	readline.PcItem("list"),
-	readline.PcItem("delete"),
+	readline.PcItem("delete", readline.PcItemDynamic(entries())),
 	readline.PcItem("exit"),
 )
 
